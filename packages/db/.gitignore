@@ -7,6 +7,9 @@ dist
 *.tgz
 /prisma/generated
 
+# local PGlite database
+.data/
+
 # code coverage
 coverage
 *.lcov

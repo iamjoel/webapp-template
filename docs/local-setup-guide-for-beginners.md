@@ -18,7 +18,7 @@ This guide walks you through installing everything the project needs, initializi
 | **Web browser**        | Yes                       | Opens the app                                                          | Chrome, Edge, Safari, or Firefox                                                 |
 | **Visual Studio Code** | Recommended, not required | Opens the project, edits configuration files, and provides a terminal  | Install the stable release                                                       |
 
-> **You do not need to install:** Python, Java, Bun, Docker, MySQL, PostgreSQL, a separate SQLite application, or Turso. The project's dependencies—the software packages it requires—create the local SQLite database automatically. A Vercel account is only needed for deployment, not for running the project locally.
+> **You do not need to install:** Python, Java, Bun, Docker, MySQL, PostgreSQL, or a separate database application or service. The project's dependencies include PGlite, an embedded PostgreSQL database that runs locally and stores its data on your computer. A Neon or Vercel account is only needed for deployment, not for running the project locally.
 
 Keep at least **5 GB of free disk space** and a working internet connection. The first setup downloads several hundred megabytes of project dependencies, and macOS may also need to install Apple's Command Line Tools.
 
@@ -81,7 +81,7 @@ This project supports Node.js 24.11.0 or later in the 24.x release line. It also
 ### Windows 11
 
 1. Open the [official Node.js download page](https://nodejs.org/en/download).
-2. Select the version marked **LTS**, then choose **Windows Installer (.msi)**. This project's local database dependency has been verified with **x64** on Windows, so choose the x64 installer. If you have a Windows on Arm computer, use the x64 version of Node.js through Windows x64 emulation or contact the project administrator first.
+2. Select the version marked **LTS**, then choose **Windows Installer (.msi)**. Choose **x64** for most Windows computers or **ARM64** for a Windows on Arm computer.
 3. Double-click the downloaded `.msi` installer.
 4. Keep the default options, accept the license terms, and select **Next** until you can select **Install**.
 5. When installation finishes, close any open PowerShell windows and open a new one.
@@ -208,7 +208,7 @@ The project needs two files named `.env` when it runs locally. If the project ad
 If either file is missing, run both commands below, one line at a time, from the terminal in the project root. The commands are the same on Windows and macOS. The first command only handles the backend configuration, and the second only handles the frontend configuration. If a file already exists, the command reports that fact and leaves the file unchanged.
 
 ```bash
-node -e "const fs=require('node:fs'),p='apps/server/.env';fs.existsSync(p)?console.log(p+' already exists; not changed'):fs.writeFileSync(p,'CORS_ORIGIN=http://localhost:3001\nDATABASE_URL=file:../../packages/db/local.db\n')"
+node -e "const fs=require('node:fs'),p='apps/server/.env';fs.existsSync(p)?console.log(p+' already exists; not changed'):fs.writeFileSync(p,'CORS_ORIGIN=http://localhost:3001\n')"
 node -e "const fs=require('node:fs'),p='apps/web/.env';fs.existsSync(p)?console.log(p+' already exists; not changed'):fs.writeFileSync(p,'VITE_SERVER_URL=http://localhost:3000\n')"
 ```
 
@@ -218,7 +218,6 @@ If a file is missing, it is normal for its command to finish without output. The
 
 ```dotenv
 CORS_ORIGIN=http://localhost:3001
-DATABASE_URL=file:../../packages/db/local.db
 ```
 
 - `apps/web/.env`:
@@ -237,11 +236,20 @@ From the terminal in the project root, enter:
 pnpm run db:push
 ```
 
-With the default configuration above, this command creates or updates the local database file at `packages/db/local.db`. Seeing `No changes detected` also means the command succeeded and the database already matches the project's current database structure, or **schema**.
+With the default configuration above, this command creates or updates the local PGlite database in `packages/db/.data/pglite`. PGlite uses a directory of files rather than one `.db` file. Seeing `No changes detected` also means the command succeeded and the database already matches the project's current database structure, or **schema**.
 
-> **Data safety:** If someone else provided `apps/server/.env` and its `DATABASE_URL` does not begin with `file:`, ask the project administrator before continuing. Do not run `db:push` yourself because it may modify a remote database.
+> The local `db:push` command is configured for PGlite and does not need `DATABASE_URL`. You do not need to start a database service: PGlite runs inside the Node.js process when a database command or the application needs it.
 
-> The default configuration uses an embedded local SQLite file. You do not need to run `pnpm run db:local` or start a separate database service.
+> **Use one database process at a time:** PGlite supports one local process or connection. If `pnpm run dev` is already running, stop it with `Ctrl + C` before running `db:push`, `db:migrate`, or `db:studio`. Wait for one database command to finish before starting another.
+
+### How the Deployed Database Is Different
+
+Local development and deployment use the same Drizzle `pg-core` schema and generated PostgreSQL migrations, but they use different databases and do not share data:
+
+- **On this computer:** PGlite stores local development data in `packages/db/.data/pglite`.
+- **On Vercel:** Neon hosts the preview and production PostgreSQL data. The Vercel Neon integration manages the remote `DATABASE_URL`; the project's environment sync command intentionally does not upload a local database value.
+
+The person responsible for deployment applies committed migrations with `pnpm run db:migrate:neon`. This command loads the linked Vercel project's production environment in memory and changes the remote Neon database. Before running it, they must verify that the linked Vercel project and `DATABASE_URL` point to the intended database. Beginners following this local setup guide should not run it unless they are also responsible for the deployment.
 
 ## Step 9: Start the Project
 
@@ -262,7 +270,7 @@ Local: http://localhost:3001/
 2. Open [http://localhost:3001](http://localhost:3001) in a browser. The page should load, and **API Status** should show a green **Connected** status.
 3. Open [http://localhost:3000](http://localhost:3000) in another browser tab. If the page shows only `OK`, the backend is working.
 
-`Connected` means the frontend can reach the backend health-check endpoint. The current template has no database tables, so this status does not mean the page has queried SQLite. Use the successful `db:push` result from Step 8 to verify database initialization.
+`Connected` means the frontend can reach the backend health-check endpoint. The current template has no database tables, so this status does not mean the page has queried PGlite. Use the successful `db:push` result from Step 8 to verify database initialization.
 
 `localhost` means this computer. Opening these addresses does not publish the project to the internet.
 
@@ -285,7 +293,7 @@ Closing the terminal or shutting down the computer also stops the project.
 pnpm run dev
 ```
 
-You normally do not need to reinstall the tools. Run `pnpm install` again if a project update adds dependencies. Run `pnpm run db:push` again if the database schema changes. After changing either `.env` file, press `Ctrl + C` to stop the project and run `pnpm run dev` again.
+You normally do not need to reinstall the tools. Run `pnpm install` again if a project update adds dependencies. If the database schema changes, stop the project before running `pnpm run db:push`, then start it again. After changing either `.env` file, press `Ctrl + C` to stop the project and run `pnpm run dev` again.
 
 ## Common Problems
 
@@ -314,7 +322,7 @@ Run `node --version`. If 24.x is earlier than 24.11.0, 22.x is earlier than 22.1
 2. If you use a VPN or proxy, try turning it off or switching networks.
 3. Run `pnpm install` again. pnpm reuses packages that have already been downloaded successfully.
 
-### The Project Reports `Invalid environment variables`, `DATABASE_URL`, or `VITE_SERVER_URL`
+### The Project Reports `Invalid environment variables`, `CORS_ORIGIN`, or `VITE_SERVER_URL`
 
 Check the two `.env` files from Step 7. Their names, locations, and contents must match the guide. In particular, make sure neither file is named `.env.txt`.
 
@@ -353,7 +361,7 @@ If you received the project as a ZIP file and did not install Git, you may omit 
 3. A complete screenshot of the first error shown after you run `pnpm run dev`.
 4. The last step in this guide that you completed successfully.
 
-> Do not send an `.env` file that contains a real password, token, or cloud database address. The default local configuration in this guide contains no password.
+> Do not send an `.env` file that contains a real password, token, or cloud database address. A Neon `DATABASE_URL` contains credentials and must be kept secret. The default local configuration in this guide contains no password or database URL.
 
 ## Related Documentation and Official Sources
 
@@ -363,3 +371,7 @@ If you received the project as a ZIP file and did not install Git, you may omit 
 - [Official Git for Windows installation page](https://git-scm.com/install/windows)
 - [Official Git for macOS installation page](https://git-scm.com/install/mac)
 - [Official Visual Studio Code installation and getting-started guide](https://code.visualstudio.com/docs/getstarted/overview)
+- [Official PGlite documentation](https://pglite.dev/docs/)
+- [Official Neon documentation](https://neon.com/docs/introduction)
+- [Drizzle ORM with PGlite](https://orm.drizzle.team/docs/connect-pglite)
+- [Drizzle ORM with Neon](https://orm.drizzle.team/docs/connect-neon)

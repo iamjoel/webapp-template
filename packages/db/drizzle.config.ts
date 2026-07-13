@@ -1,15 +1,13 @@
-import dotenv from "dotenv";
 import { defineConfig } from "drizzle-kit";
 
-dotenv.config({
-  path: "../../apps/server/.env",
-});
+import { getPgliteDataDir } from "./src/pglite-path";
 
 export default defineConfig({
   schema: "./src/schema",
   out: "./src/migrations",
-  dialect: "turso",
+  dialect: "postgresql",
+  driver: "pglite",
   dbCredentials: {
-    url: process.env.DATABASE_URL || "",
+    url: getPgliteDataDir(),
   },
 });

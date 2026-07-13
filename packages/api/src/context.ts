@@ -1,3 +1,4 @@
+import { db } from "@app/db";
 import type { Context as HonoContext } from "hono";
 
 export type CreateContextOptions = {
@@ -7,6 +8,7 @@ export type CreateContextOptions = {
 export async function createContext(_options: CreateContextOptions) {
   return {
     auth: null,
+    db,
     session: null,
   };
 }

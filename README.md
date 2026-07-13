@@ -14,7 +14,7 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **tRPC** - End-to-end type-safe APIs
 - **Node.js** - Runtime environment
 - **Drizzle** - TypeScript-first ORM
-- **SQLite/Turso** - Database engine
+- **PostgreSQL** - PGlite locally and Neon in production
 - **Vite+** - Unified Vite toolchain, workspace task runner, linting, and formatting
 
 ## Getting Started
@@ -27,23 +27,38 @@ pnpm install
 
 ## Database Setup
 
-This project uses SQLite with Drizzle ORM.
+This project uses one Drizzle `pg-core` schema and one set of PostgreSQL migrations with two separate data stores:
 
-1. Start the local SQLite database (optional):
+| Environment                   | Database                                            | Data location                                   |
+| ----------------------------- | --------------------------------------------------- | ----------------------------------------------- |
+| Local development             | [PGlite](https://pglite.dev/)                       | `packages/db/.data/pglite` on your computer     |
+| Vercel preview and production | [Neon Postgres](https://neon.com/docs/introduction) | A remote Neon database connected through Vercel |
 
-```bash
-pnpm run db:local
+The schemas stay compatible, but the local and hosted databases do not share data. PGlite runs inside the application, so local development does not require PostgreSQL, Docker, or a separate database service.
+
+The shared database API covers Drizzle's portable PostgreSQL query builders. Driver-specific clients and interactive transactions are intentionally not exposed because the production Neon HTTP driver does not support the same transaction API as PGlite.
+
+1. Create `apps/server/.env` for the API:
+
+```dotenv
+CORS_ORIGIN=http://localhost:3001
 ```
 
-2. Update your `.env` file in the `apps/server` directory with the appropriate connection details if needed.
+2. Create `apps/web/.env` for the web app:
 
-3. Apply the schema to your database:
+```dotenv
+VITE_SERVER_URL=http://localhost:3000
+```
+
+3. Apply the schema to the local PGlite database:
 
 ```bash
 pnpm run db:push
 ```
 
-Then, run the development server:
+PGlite supports one local process at a time. Stop `pnpm run dev` before running `db:push`, `db:migrate`, or `db:studio`, and do not run those database commands concurrently.
+
+4. Run the development server:
 
 ```bash
 pnpm run dev
@@ -82,18 +97,24 @@ If you want to add app-specific blocks instead of shared primitives, run the sha
 
 ### Vercel Services
 
-- Target: web + server
+- Target: one Vercel Services project containing web + server
 - Config: `vercel.json`
+- Project framework: Services (the project root must be the repository root)
+- Database: create or select a Neon database through the Vercel Neon integration, then connect it to the same Vercel project for the preview and production environments.
+- Neon manages `DATABASE_URL` in Vercel. The environment sync commands intentionally do not upload or replace it with a local value.
 - Link the project first: pnpm run deploy:setup
-- Local Vercel dev: pnpm run dev:vercel
+- Local Vercel dev with PGlite: pnpm run dev:vercel
 - Sync preview env: pnpm run env:preview
 - Sync production env: pnpm run env:production
+- Apply committed migrations using the linked project's production Neon environment: pnpm run db:migrate:neon
 - Dry-run check (no upload): pnpm run deploy:check
 - Preview deploy: pnpm run deploy
 - Production deploy: pnpm run deploy:prod
 - Web requests under `/api/*` route to the server service and are rewritten before reaching the backend.
-  Vercel Services share project environment variables, but deploys do not upload local `.env` files automatically. Link the project with `vercel link`, then run the env sync command before your first deploy (otherwise the deployment starts with no env vars), or pass one-off envs with `vercel deploy -e KEY=value`.
+  Vercel Services share project environment variables, but deploys do not upload local `.env` files automatically. Link the repository root to the single Services project with `vercel link`, then run the env sync command before your first deploy, or pass one-off envs with `vercel deploy -e KEY=value`.
   Pass Vercel CLI flags to the env sync command directly, for example: `pnpm run env:production --scope your-team`.
+
+Before running `pnpm run db:migrate:neon`, verify that the linked Vercel project and its production `DATABASE_URL` point to the intended Neon database. The command downloads that environment in memory and then runs Drizzle; it does not copy the URL into the local `.env`. Production migrations change remote data and should not be run against an unverified connection. Do not copy the local PGlite data directory or add a local database path to Vercel.
 
 For more details, see the guide on [Deploying to Vercel](https://www.better-t-stack.dev/docs/guides/vercel).
 
@@ -123,11 +144,11 @@ app/
 - `pnpm run dev:web`: Start only the web application
 - `pnpm run dev:server`: Start only the server
 - `pnpm run check-types`: Check TypeScript types across all apps
-- `pnpm run db:push`: Push schema changes to database
-- `pnpm run db:generate`: Generate database client/types
-- `pnpm run db:migrate`: Run database migrations
-- `pnpm run db:studio`: Open database studio UI
-- `pnpm run db:local`: Start the local SQLite database
+- `pnpm run db:push`: Apply the current schema to the local PGlite database
+- `pnpm run db:generate`: Generate PostgreSQL migrations from schema changes
+- `pnpm run db:migrate`: Apply generated migrations to the local PGlite database
+- `pnpm run db:migrate:neon`: Load production env from the linked Vercel project and apply generated migrations to Neon
+- `pnpm run db:studio`: Open Drizzle Studio for the local PGlite database
 - `pnpm run check`: Run Vite+ format/lint checks and workspace TypeScript checks
 - `pnpm run lint`: Run Vite+ lint checks
 - `pnpm run format`: Run Vite+ formatting
@@ -135,8 +156,8 @@ app/
 - `pnpm run hooks:setup`: Install Vite+ native Git hooks with `vp config`
 - `pnpm run deploy:setup`: Link this repo to a Vercel project (first-time setup)
 - `pnpm run dev:vercel`: Run the Vercel Services dev environment locally
-- `pnpm run env:preview`: Sync local env files to the Vercel preview environment
-- `pnpm run env:production`: Sync local env files to the Vercel production environment
+- `pnpm run env:preview`: Sync non-database local env values to the Vercel preview environment
+- `pnpm run env:production`: Sync non-database local env values to the Vercel production environment
 - `pnpm run deploy`: Create a Vercel preview deployment
 - `pnpm run deploy:prod`: Deploy to Vercel production
 - `pnpm run deploy:check`: Dry-run a deploy to preview framework detection and included files without uploading

@@ -3,29 +3,31 @@
   "type": "module",
   "exports": {
     ".": {
-      "default": "./src/index.ts"
+      "development": "./src/pglite.ts",
+      "default": "./src/neon.ts"
     },
-    "./*": {
-      "default": "./src/*.ts"
+    "./schema": {
+      "default": "./src/schema/index.ts"
     }
   },
   "scripts": {
-    "db:local": "turso dev --db-file local.db",
+    "check-types": "tsc -b",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:migrate:neon": "drizzle-kit migrate --config drizzle.neon.config.ts"
   },
   "dependencies": {
     "@app/env": "workspace:*",
-    "@libsql/client": "0.17.4",
+    "@neondatabase/serverless": "^1.1.0",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.2",
-    "libsql": "0.5.29",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@app/config": "workspace:*",
+    "@electric-sql/pglite": "^0.5.4",
     "drizzle-kit": "^0.31.10",
     "typescript": "catalog:"
   }

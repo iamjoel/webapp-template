@@ -7,7 +7,10 @@ const DEFAULT_ENVIRONMENT = "preview";
 const VALID_ENVIRONMENTS = new Set(["development", "preview", "production"]);
 const VERCEL_COMMAND = ["pnpm", "exec", "vercel"] as const;
 const DEFAULT_FILES = ["apps/web/.env", "apps/server/.env"];
-const SKIP_KEYS = new Set(["BETTER_AUTH_URL", "CORS_ORIGIN", "NODE_ENV"]);
+// Database settings are intentionally environment-specific. The Vercel Neon
+// integration owns DATABASE_URL.
+const SKIP_KEYS = new Set(["BETTER_AUTH_URL", "CORS_ORIGIN", "DATABASE_URL", "NODE_ENV"]);
+const SKIP_KEY_PREFIXES = ["DATABASE_URL_", "NEON_", "PG", "POSTGRES_"];
 const OVERRIDE_KEYS = new Map([
   ["NEXT_PUBLIC_SERVER_URL", "/api"],
   ["NUXT_PUBLIC_SERVER_URL", "/api"],
@@ -52,7 +55,7 @@ for (const file of envFiles) {
   }
 
   for (const [key, value] of Object.entries(dotenv.parse(readFileSync(file, "utf8")))) {
-    if (SKIP_KEYS.has(key)) continue;
+    if (SKIP_KEYS.has(key) || SKIP_KEY_PREFIXES.some((prefix) => key.startsWith(prefix))) continue;
     env.set(key, OVERRIDE_KEYS.get(key) ?? value);
   }
 }

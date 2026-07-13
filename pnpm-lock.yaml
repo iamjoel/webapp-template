@@ -269,18 +269,15 @@ importers:
       '@app/env':
         specifier: workspace:*
         version: link:../env
-      '@libsql/client':
-        specifier: 0.17.4
-        version: 0.17.4
+      '@neondatabase/serverless':
+        specifier: ^1.1.0
+        version: 1.1.0
       dotenv:
         specifier: 'catalog:'
         version: 17.4.2
       drizzle-orm:
         specifier: ^0.45.2
-        version: 0.45.2(@libsql/client@0.17.4)
-      libsql:
-        specifier: 0.5.29
-        version: 0.5.29
+        version: 0.45.2(@electric-sql/pglite@0.5.4)(@libsql/client@0.17.4)(@neondatabase/serverless@1.1.0)
       zod:
         specifier: 'catalog:'
         version: 4.4.3
@@ -288,6 +285,9 @@ importers:
       '@app/config':
         specifier: workspace:*
         version: link:../config
+      '@electric-sql/pglite':
+        specifier: ^0.5.4
+        version: 0.5.4
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
@@ -576,6 +576,9 @@ packages:
   '@edge-runtime/vm@3.2.0':
     resolution: {integrity: sha512-0dEVyRLM/lG4gp1R/Ik5bfPl/1wX00xFwd5KcNH602tzBa09oF7pbTKETEhR1GjZ75K6OJnYFu8II2dyMhONMw==}
     engines: {node: '>=16'}
+
+  '@electric-sql/pglite@0.5.4':
+    resolution: {integrity: sha512-yYZUyyXrHU7tPlCjwZQJ6hIG9DscdCCn7Uk0mYKwC1FeHX286AbcmFveMiRBEak8e9iPupjsoVImN3yJZVed2g==}
 
   '@emnapi/core@1.11.1':
     resolution: {integrity: sha512-RSvbQmHzdKzNsLYa/wHrbc3KN4sYLKAdPZxqiM2HATqv/SBk2/ENSHpvXGaLOMcsAyz0poEGqkmmKYG3OWiJEQ==}
@@ -1426,6 +1429,10 @@ packages:
 
   '@neon-rs/load@0.0.4':
     resolution: {integrity: sha512-kTPhdZyTQxB+2wpiRcFWrDcejc4JI6tkPuS7UZCG4l6Zvc5kU/gGQ/ozvHTh1XR5tS+UlfAfGuPajjzQjCiHCw==}
+
+  '@neondatabase/serverless@1.1.0':
+    resolution: {integrity: sha512-r3ZZhRjEcfEdKIZnoB1RusNgvHuaBRqfCzV4Gi+5A9yUX0S4HTws/ASWqt13wL4y4I+0rqsWGdA2w7EQXHi3+Q==}
+    engines: {node: '>=19.0.0'}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -5567,6 +5574,8 @@ snapshots:
     dependencies:
       '@edge-runtime/primitives': 4.1.0
 
+  '@electric-sql/pglite@0.5.4': {}
+
   '@emnapi/core@1.11.1':
     dependencies:
       '@emnapi/wasi-threads': 1.2.2
@@ -5969,10 +5978,12 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+    optional: true
 
   '@libsql/core@0.17.4':
     dependencies:
       js-base64: 3.8.1
+    optional: true
 
   '@libsql/darwin-arm64@0.5.29':
     optional: true
@@ -5987,6 +5998,7 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+    optional: true
 
   '@libsql/isomorphic-ws@0.1.5':
     dependencies:
@@ -5995,6 +6007,7 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+    optional: true
 
   '@libsql/linux-arm-gnueabihf@0.5.29':
     optional: true
@@ -6110,7 +6123,10 @@ snapshots:
       '@tybys/wasm-util': 0.10.3
     optional: true
 
-  '@neon-rs/load@0.0.4': {}
+  '@neon-rs/load@0.0.4':
+    optional: true
+
+  '@neondatabase/serverless@1.1.0': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -6778,6 +6794,7 @@ snapshots:
   '@types/node@26.1.1':
     dependencies:
       undici-types: 8.3.0
+    optional: true
 
   '@types/react-dom@19.2.3(@types/react@19.2.17)':
     dependencies:
@@ -6792,6 +6809,7 @@ snapshots:
   '@types/ws@8.18.1':
     dependencies:
       '@types/node': 26.1.1
+    optional: true
 
   '@vercel/backends@0.8.21(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)':
     dependencies:
@@ -7609,7 +7627,8 @@ snapshots:
 
   dequal@2.0.3: {}
 
-  detect-libc@2.0.2: {}
+  detect-libc@2.0.2:
+    optional: true
 
   detect-libc@2.1.2: {}
 
@@ -7630,9 +7649,11 @@ snapshots:
       esbuild: 0.25.12
       tsx: 4.23.0
 
-  drizzle-orm@0.45.2(@libsql/client@0.17.4):
+  drizzle-orm@0.45.2(@electric-sql/pglite@0.5.4)(@libsql/client@0.17.4)(@neondatabase/serverless@1.1.0):
     optionalDependencies:
+      '@electric-sql/pglite': 0.5.4
       '@libsql/client': 0.17.4
+      '@neondatabase/serverless': 1.1.0
 
   dts-resolver@3.0.0: {}
 
@@ -8220,7 +8241,8 @@ snapshots:
 
   jose@6.2.3: {}
 
-  js-base64@3.8.1: {}
+  js-base64@3.8.1:
+    optional: true
 
   js-tokens@4.0.0: {}
 
@@ -8275,6 +8297,7 @@ snapshots:
       '@libsql/linux-x64-gnu': 0.5.29
       '@libsql/linux-x64-musl': 0.5.29
       '@libsql/win32-x64-msvc': 0.5.29
+    optional: true
 
   lightningcss-android-arm64@1.32.0:
     optional: true
@@ -8738,7 +8761,8 @@ snapshots:
     dependencies:
       parse-ms: 4.0.0
 
-  promise-limit@2.7.0: {}
+  promise-limit@2.7.0:
+    optional: true
 
   promisepipe@3.0.0: {}
 
@@ -9338,7 +9362,8 @@ snapshots:
 
   undici-types@6.21.0: {}
 
-  undici-types@8.3.0: {}
+  undici-types@8.3.0:
+    optional: true
 
   undici@5.28.4:
     dependencies:
