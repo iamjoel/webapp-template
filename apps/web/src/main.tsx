@@ -1,10 +1,15 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
+import { Suspense, lazy } from "react";
 import ReactDOM from "react-dom/client";
 
 import Loader from "./components/loader";
 import { routeTree } from "./routeTree.gen";
 import { queryClient, trpc } from "./utils/trpc";
+
+const Agentation = import.meta.env.DEV
+  ? lazy(() => import("agentation").then((module) => ({ default: module.Agentation })))
+  : null;
 
 const router = createRouter({
   routeTree,
@@ -31,5 +36,14 @@ if (!rootElement) {
 
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
-  root.render(<RouterProvider router={router} />);
+  root.render(
+    <>
+      <RouterProvider router={router} />
+      {Agentation ? (
+        <Suspense fallback={null}>
+          <Agentation />
+        </Suspense>
+      ) : null}
+    </>,
+  );
 }
