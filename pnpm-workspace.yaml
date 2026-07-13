@@ -1,6 +1,13 @@
 packages:
   - apps/*
   - packages/*
+overrides:
+  vite: npm:@voidzero-dev/vite-plus-core@0.2.2
+peerDependencyRules:
+  allowAny:
+    - vite
+  allowedVersions:
+    vite: "*"
 allowBuilds:
   esbuild: true
   sharp: true
