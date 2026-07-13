@@ -2,6 +2,8 @@
 
 This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Hono, TRPC, and more.
 
+> New to programming or running a project locally? Follow the [beginner's local setup guide](docs/local-setup-guide-for-beginners.md) to install the required tools and start the app.
+
 ## Features
 
 - **TypeScript** - For type safety and improved developer experience
