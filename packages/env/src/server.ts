@@ -19,6 +19,9 @@ const runtimeEnv = {
 };
 
 export const env = createEnv({
+  // Keep env-core's prefix generic explicit for Vercel's per-file type checker.
+  clientPrefix: "",
+  client: {},
   server: {
     DATABASE_URL: z.string().min(1).optional(),
     CORS_ORIGIN: z.url(),
